@@ -1,5 +1,6 @@
-package io.github.sunlaud.changegen.generator.change;
+package io.github.sunlaud.changegen.change.complex;
 
+import io.github.sunlaud.changegen.change.Change;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Collection;

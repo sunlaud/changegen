@@ -1,7 +1,7 @@
-package io.github.sunlaud.changegen.generator.change.basic;
+package io.github.sunlaud.changegen.change.basic;
 
-import io.github.sunlaud.changegen.generator.Key;
-import io.github.sunlaud.changegen.generator.change.Change;
+import io.github.sunlaud.changegen.model.Key;
+import io.github.sunlaud.changegen.change.Change;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 

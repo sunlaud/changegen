@@ -1,4 +1,4 @@
-package io.github.sunlaud.changegen.generator;
+package io.github.sunlaud.changegen.model;
 
 import lombok.Data;
 import lombok.NonNull;
@@ -12,11 +12,10 @@ import java.util.Collections;
 public class Columns {
     @NonNull
     private final String tableName;
-
     @NonNull
     private final Collection<String> names;
 
-    public Columns(Column column) {
+    public Columns(@NonNull Column column) {
         this(column.getTableName(), Collections.singletonList(column.getName()));
     }
 

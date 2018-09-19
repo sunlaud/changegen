@@ -1,10 +1,12 @@
-package io.github.sunlaud.changegen.extractor.db.key;
+package io.github.sunlaud.changegen.dbinfo.key;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
-import io.github.sunlaud.changegen.generator.Column;
-import io.github.sunlaud.changegen.generator.Columns;
-import io.github.sunlaud.changegen.generator.Key;
+import io.github.sunlaud.changegen.model.Column;
+import io.github.sunlaud.changegen.model.Columns;
+import io.github.sunlaud.changegen.model.ForeignKey;
+import io.github.sunlaud.changegen.model.Key;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
@@ -18,10 +20,11 @@ import static com.google.common.base.Preconditions.checkState;
 
 @RequiredArgsConstructor
 public abstract class AbstractKeyExtractor implements KeyExtractor {
+    @NonNull
     private final DBI dbi;
 
     @Override
-    public Key getPk(String tableName) {
+    public Key getPk(@NonNull String tableName) {
         try (Handle handle = dbi.open()) {
             List<Map<String, Object>> keys = handle
                     .createQuery(getPkQuerySql())
@@ -35,7 +38,7 @@ public abstract class AbstractKeyExtractor implements KeyExtractor {
     }
 
     @Override
-    public Collection<Key> getFkReferncing(Columns referencedColumns) {
+    public Collection<ForeignKey> getFkReferncing(@NonNull Columns referencedColumns) {
         Preconditions.checkArgument(referencedColumns.getNames().size() < 2, "Support of multi-column foreign keys is not implemented yet");
 
         try (Handle handle = dbi.open()) {
@@ -47,6 +50,7 @@ public abstract class AbstractKeyExtractor implements KeyExtractor {
 
             return keys.stream()
                     .map(this::extractKey)
+                    .map(key -> new ForeignKey(key, referencedColumns))
                     .collect(Collectors.toList());
         }
     }

@@ -1,4 +1,4 @@
-package io.github.sunlaud.changegen.extractor.db.key;
+package io.github.sunlaud.changegen.dbinfo.key;
 
 import org.skife.jdbi.v2.DBI;
 

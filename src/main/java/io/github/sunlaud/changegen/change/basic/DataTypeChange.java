@@ -1,8 +1,8 @@
-package io.github.sunlaud.changegen.generator.change.basic;
+package io.github.sunlaud.changegen.change.basic;
 
 
-import io.github.sunlaud.changegen.generator.Column;
-import io.github.sunlaud.changegen.generator.change.ColumnChange;
+import io.github.sunlaud.changegen.model.Column;
+import io.github.sunlaud.changegen.change.ColumnChange;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;

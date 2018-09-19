@@ -1,4 +1,4 @@
-package io.github.sunlaud.changegen.generator.change;
+package io.github.sunlaud.changegen.change;
 
 public interface Change {
     String generateXml();

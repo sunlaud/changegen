@@ -2,10 +2,10 @@ package io.github.sunlaud.changegen;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import io.github.sunlaud.changegen.extractor.db.key.MsSqlKeyExtractor;
-import io.github.sunlaud.changegen.generator.Column;
-import io.github.sunlaud.changegen.generator.change.ColumnChange;
-import io.github.sunlaud.changegen.generator.change.basic.DataTypeChange;
+import io.github.sunlaud.changegen.dbinfo.key.MsSqlKeyExtractor;
+import io.github.sunlaud.changegen.model.Column;
+import io.github.sunlaud.changegen.change.ColumnChange;
+import io.github.sunlaud.changegen.change.basic.DataTypeChange;
 import org.skife.jdbi.v2.DBI;
 
 import javax.sql.DataSource;

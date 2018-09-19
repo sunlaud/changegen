@@ -1,4 +1,4 @@
-package io.github.sunlaud.changegen.generator;
+package io.github.sunlaud.changegen.model;
 
 import lombok.Data;
 import lombok.NonNull;
@@ -7,7 +7,6 @@ import lombok.NonNull;
 public class Column {
     @NonNull
     private final String tableName;
-
     @NonNull
     private final String name;
 }
