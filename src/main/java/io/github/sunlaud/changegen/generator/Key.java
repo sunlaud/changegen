@@ -1,4 +1,4 @@
-package io.github.sunlaud.changegen;
+package io.github.sunlaud.changegen.generator;
 
 import lombok.Data;
 import lombok.NonNull;
@@ -18,7 +18,7 @@ public class Key {
     }
 
     public String getColumnNames() {
-        return columns.getNames();
+        return columns.getNamesJoined();
     }
 
     public String getTableName() {

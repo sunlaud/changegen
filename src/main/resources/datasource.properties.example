@@ -1,0 +1,4 @@
+jdbcUrl=jdbc:some:vendor://host:port;etc
+dataSource.user=johndoe
+dataSource.password=pass
+

@@ -1,8 +1,8 @@
-package io.github.sunlaud.changegen.change.basic;
+package io.github.sunlaud.changegen.generator.change.basic;
 
-import io.github.sunlaud.changegen.Columns;
-import io.github.sunlaud.changegen.Key;
-import io.github.sunlaud.changegen.change.Change;
+import io.github.sunlaud.changegen.generator.Columns;
+import io.github.sunlaud.changegen.generator.Key;
+import io.github.sunlaud.changegen.generator.change.Change;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -14,8 +14,8 @@ public class AddFkChange implements Change {
     private final Columns referenceColumns;
 
     @Override
-    public String generate() {
+    public String generateXml() {
         return String.format("<addForeignKeyConstraint baseTableName=\"%s\" baseColumnNames=\"%s\" referencedTableName=\"%s\" referencedColumnNames=\"%s\" constraintName=\"%s\"/>",
-                key.getTableName(), key.getColumnNames(), referenceColumns.getTableName(), referenceColumns.getNames(), key.getName());
+                key.getTableName(), key.getColumnNames(), referenceColumns.getTableName(), referenceColumns.getNamesJoined(), key.getName());
     }
 }

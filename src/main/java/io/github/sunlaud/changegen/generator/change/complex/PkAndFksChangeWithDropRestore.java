@@ -1,30 +1,32 @@
-package io.github.sunlaud.changegen.change.complex;
+package io.github.sunlaud.changegen.generator.change.complex;
 
-import io.github.sunlaud.changegen.Key;
-import io.github.sunlaud.changegen.change.Change;
-import io.github.sunlaud.changegen.change.basic.AddFkChange;
-import io.github.sunlaud.changegen.change.basic.DataTypeChange;
-import io.github.sunlaud.changegen.change.basic.DropFkChange;
+import io.github.sunlaud.changegen.generator.Key;
+import io.github.sunlaud.changegen.generator.change.Change;
+import io.github.sunlaud.changegen.generator.change.CompositeChange;
+import io.github.sunlaud.changegen.generator.change.basic.AddFkChange;
+import io.github.sunlaud.changegen.generator.change.basic.DropFkChange;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class PkWithReferencedFksDataTypeChange extends PkDataTypeChange {
+@RequiredArgsConstructor
+public class PkAndFksChangeWithDropRestore extends CompositeChange {
+    @NonNull
+    private final Change pkChange;
+    @NonNull
+    private final Key pk;
+    @NonNull
     private final Collection<Key> foreignKeys;
-
-    public PkWithReferencedFksDataTypeChange(DataTypeChange dataTypeChange, Key pk, @NonNull Collection<Key> foreignKeys) {
-        super(dataTypeChange, pk);
-        this.foreignKeys = foreignKeys;
-    }
 
     @Override
     protected Collection<Change> getChanges() {
         List<Change> changes = new ArrayList<>();
         changes.addAll(dropFks());
-        changes.addAll(super.getChanges());
+        changes.add(pkChange);
         changes.addAll(addFks());
         return changes;
     }
@@ -37,7 +39,7 @@ public class PkWithReferencedFksDataTypeChange extends PkDataTypeChange {
 
     private Collection<? extends Change> addFks() {
         return foreignKeys.stream()
-                .map(fk -> new AddFkChange(fk, getPk().getColumns()))
+                .map(fk -> new AddFkChange(fk, pk.getColumns()))
                 .collect(Collectors.toList());
     }
 

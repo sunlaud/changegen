@@ -1,7 +1,7 @@
-package io.github.sunlaud.changegen.change.basic;
+package io.github.sunlaud.changegen.generator.change.basic;
 
-import io.github.sunlaud.changegen.Key;
-import io.github.sunlaud.changegen.change.Change;
+import io.github.sunlaud.changegen.generator.Key;
+import io.github.sunlaud.changegen.generator.change.Change;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -11,7 +11,7 @@ public class DropPkChange implements Change {
     private final Key key;
 
     @Override
-    public String generate() {
+    public String generateXml() {
         return String.format("<dropPrimaryKey tableName=\"%s\" constraintName=\"%s\"/>", key.getTableName(), key.getName());
     }
 }
