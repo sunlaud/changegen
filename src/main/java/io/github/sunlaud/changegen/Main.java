@@ -4,7 +4,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.github.sunlaud.changegen.extractor.db.key.MsSqlKeyExtractor;
 import io.github.sunlaud.changegen.generator.Column;
-import io.github.sunlaud.changegen.generator.change.Change;
+import io.github.sunlaud.changegen.generator.change.ColumnChange;
 import io.github.sunlaud.changegen.generator.change.basic.DataTypeChange;
 import org.skife.jdbi.v2.DBI;
 
@@ -16,7 +16,7 @@ public class Main {
         MsSqlKeyExtractor keyExtractor = new MsSqlKeyExtractor(new DBI(getDataSource()));
         ChangeSetGenerator changeSetGenerator = new ChangeSetGenerator(keyExtractor);
 
-        Change change = new DataTypeChange(new Column("business_category", "id"), "varchar(10)");
+        ColumnChange change = new DataTypeChange(new Column("business_category", "id"), "varchar(10)");
 
         System.out.println(changeSetGenerator.generateChangeset(change));
     }

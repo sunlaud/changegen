@@ -2,13 +2,13 @@ package io.github.sunlaud.changegen.generator.change.basic;
 
 
 import io.github.sunlaud.changegen.generator.Column;
-import io.github.sunlaud.changegen.generator.change.SingleColumnChange;
+import io.github.sunlaud.changegen.generator.change.ColumnChange;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class DataTypeChange implements SingleColumnChange {
+public class DataTypeChange implements ColumnChange {
     @Getter
     @NonNull
     private final Column column;
@@ -18,5 +18,9 @@ public class DataTypeChange implements SingleColumnChange {
     @Override
     public String generateXml() {
         return String.format("<modifyDataType tableName=\"%s\" columnName=\"%s\" newDataType=\"%s\"/>", column.getTableName(), column.getName(), newDataType);
+    }
+
+    public DataTypeChange applyTo(Column anotherColumn) {
+        return new DataTypeChange(anotherColumn, newDataType);
     }
 }
