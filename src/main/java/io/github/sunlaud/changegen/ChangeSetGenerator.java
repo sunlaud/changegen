@@ -25,6 +25,11 @@ public class ChangeSetGenerator {
     private final KeyExtractor keyExtractor;
 
     public String generateChangeset(@NonNull ColumnChange change) {
+        Change changeToUse = buildDependencyAwareChange(change);
+        return changeToUse.generateXml();
+    }
+
+    private Change buildDependencyAwareChange(@NonNull ColumnChange change) {
         Change changeToUse = change;
         Column affectedColumn = change.getColumn();
         Key pk = keyExtractor.getPk(affectedColumn.getTableName());
@@ -35,10 +40,11 @@ public class ChangeSetGenerator {
                 CompositeChange dependentFksChange = fks.stream()
                         .map(fk -> fk.getColumnReferencing(affectedColumn))
                         .map(change::applyTo)
+                        .map(this::buildDependencyAwareChange) //search for PK/FK referencing this FK
                         .collect(collectingAndThen(toList(), CompositeChange::of));
                 changeToUse = new ChangeWithFksDropRestore(CompositeChange.of(asList(changeToUse, dependentFksChange)), fks);
             }
         }
-        return changeToUse.generateXml();
+        return changeToUse;
     }
 }

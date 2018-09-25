@@ -34,8 +34,7 @@ Currently only MSSQL and H2 DBs are supported. To support other DBs just add dep
 **Note:** mind cases of table & column names, tool relies on JDBC functionality which is case-sensitive (need to fix?)
 
 ### Todo
-* add more JDBC drivers
 * create CLI launcher
-* recursively search for FKs referencing FKs
 * output a well-formed &lt;changeSet/&gt; instead of just simple DDL statements
+* add more JDBC drivers
 * (?) split changes into different changesets for DBs that doesn't support transactional DDL modifications
