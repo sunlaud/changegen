@@ -66,6 +66,7 @@ public class JdbcKeyExtractor implements KeyExtractor {
             return keysByTable.entrySet().stream()
                     .map(Entry::getValue)
                     .map(this::buildFk)
+                    .filter(fk -> fk.getReferencedColumns().contain(referencedColumns))
                     .collect(Collectors.toList());
         }
     }

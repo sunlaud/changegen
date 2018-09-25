@@ -31,7 +31,7 @@ public class ForeignKey extends Key {
         return new ForeignKey(composedKey, composedReferences);
     }
 
-    public Columns getReferenceColumns() {
+    public Columns getReferencedColumns() {
         return references.stream()
                 .map(ColumnReference::getTargetColumn)
                 .collect(collectingAndThen(toList(), Columns::new));

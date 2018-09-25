@@ -13,6 +13,6 @@ public class AddFkChange implements Change {
     @Override
     public String generateXml() {
         return String.format("<addForeignKeyConstraint baseTableName=\"%s\" baseColumnNames=\"%s\" referencedTableName=\"%s\" referencedColumnNames=\"%s\" constraintName=\"%s\"/>",
-                key.getTableName(), key.getColumnNamesJoined(), key.getReferenceColumns().getTableName(), key.getReferenceColumns().getNamesJoined(), key.getName());
+                key.getTableName(), key.getColumnNamesJoined(), key.getReferencedColumns().getTableName(), key.getReferencedColumns().getNamesJoined(), key.getName());
     }
 }

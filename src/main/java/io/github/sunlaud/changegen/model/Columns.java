@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
@@ -40,7 +41,13 @@ public class Columns {
     }
 
     public boolean contain(@NonNull Column column) {
-        return tableName.equalsIgnoreCase(column.getTableName()) && names.stream().anyMatch(column.getName()::equalsIgnoreCase);
+        return contain(new Columns(column));
+    }
+
+    public boolean contain(@NonNull Columns columns) {
+        Set<String> otherNamesUppercase = columns.getNames().stream().map(String::toUpperCase).collect(Collectors.toSet());
+        Set<String> thisNamesUppercase = this.getNames().stream().map(String::toUpperCase).collect(Collectors.toSet());
+        return tableName.equalsIgnoreCase(columns.getTableName()) && thisNamesUppercase.containsAll(otherNamesUppercase);
     }
 
     public Columns add(@NonNull Columns other) {
