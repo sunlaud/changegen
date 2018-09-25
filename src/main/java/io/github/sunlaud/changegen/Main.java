@@ -2,21 +2,21 @@ package io.github.sunlaud.changegen;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import io.github.sunlaud.changegen.dbinfo.key.MsSqlKeyExtractor;
-import io.github.sunlaud.changegen.model.Column;
 import io.github.sunlaud.changegen.change.ColumnChange;
 import io.github.sunlaud.changegen.change.basic.DataTypeChange;
-import org.skife.jdbi.v2.DBI;
+import io.github.sunlaud.changegen.dbinfo.key.JdbcKeyExtractor;
+import io.github.sunlaud.changegen.dbinfo.key.KeyExtractor;
+import io.github.sunlaud.changegen.model.Column;
 
 import javax.sql.DataSource;
 
 public class Main {
 
     public static void main(String[] args) {
-        MsSqlKeyExtractor keyExtractor = new MsSqlKeyExtractor(new DBI(getDataSource()));
+        KeyExtractor keyExtractor = new JdbcKeyExtractor(getDataSource());
         ChangeSetGenerator changeSetGenerator = new ChangeSetGenerator(keyExtractor);
 
-        ColumnChange change = new DataTypeChange(new Column("business_category", "id"), "varchar(10)");
+        ColumnChange change = new DataTypeChange(new Column("EMPLOYEE", "FIRST_NAME"), "varchar(10)");
 
         System.out.println(changeSetGenerator.generateChangeset(change));
     }

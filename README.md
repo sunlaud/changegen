@@ -21,9 +21,7 @@ The "changegen" tool automates all listed steps. You need to provide just table 
 Internally changegen connects to database (readonly) and uses INFORMATION_SCHEMA to obtain all information about column relations.
 
 ### Supported databases
-Currently only MSSQL DB is supported, but the tool can be easily extended to support other DBs. For this one should implement
-[KeyExtractor](src/main/java/io/github/sunlaud/changegen/dbinfo/key/KeyExtractor.java) interface
-(use as example [MsSqlKeyExtractor](src/main/java/io/github/sunlaud/changegen/dbinfo/key/MsSqlKeyExtractor.java) class).
+Currently only MSSQL and H2 DBs are supported. To support other DBs just add dependency to required JDBC driver.
 
 
 ### How to use
@@ -33,9 +31,11 @@ Currently only MSSQL DB is supported, but the tool can be easily extended to sup
 3. Launch Main class
 4. Changesets for Liquibase will be generated and dumped to console
 
+**Note:** mind cases of table & column names, tool relies on JDBC functionality which is case-sensitive (need to fix?)
+
 ### Todo
-* extend list of supported DBs
+* add more JDBC drivers
 * create CLI launcher
-* implement support of multi-column PKs
+* recursively search for FKs referencing FKs
 * output a well-formed &lt;changeSet/&gt; instead of just simple DDL statements
 * (?) split changes into different changesets for DBs that doesn't support transactional DDL modifications
