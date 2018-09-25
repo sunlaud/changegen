@@ -12,9 +12,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.stream.Collectors.toList;
 
 @Data
 @RequiredArgsConstructor
@@ -28,7 +28,7 @@ public class Columns {
         Map<String, Collection<Column>> columnsByTable = Multimaps.index(columns, Column::getTableName).asMap();
         Entry<String, Collection<Column>> entry = Iterables.getOnlyElement(columnsByTable.entrySet());
         tableName = entry.getKey();
-        names = entry.getValue().stream().map(Column::getName).collect(Collectors.toList());
+        names = entry.getValue().stream().map(Column::getName).collect(toList());
     }
 
     public Columns(@NonNull Column column) {

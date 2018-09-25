@@ -1,9 +1,9 @@
 package io.github.sunlaud.changegen.change.complex;
 
-import io.github.sunlaud.changegen.model.Key;
 import io.github.sunlaud.changegen.change.Change;
 import io.github.sunlaud.changegen.change.basic.AddPkChange;
 import io.github.sunlaud.changegen.change.basic.DropPkChange;
+import io.github.sunlaud.changegen.model.Key;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 

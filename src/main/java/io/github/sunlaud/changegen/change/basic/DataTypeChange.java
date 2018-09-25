@@ -23,4 +23,8 @@ public class DataTypeChange implements ColumnChange {
     public DataTypeChange applyTo(Column anotherColumn) {
         return new DataTypeChange(anotherColumn, newDataType);
     }
+
+    public AddNotNullConstraintChange withNotNull() {
+        return new AddNotNullConstraintChange(column, newDataType);
+    }
 }

@@ -2,6 +2,7 @@ package io.github.sunlaud.changegen;
 
 import io.github.sunlaud.changegen.change.Change;
 import io.github.sunlaud.changegen.change.ColumnChange;
+import io.github.sunlaud.changegen.change.basic.DataTypeChange;
 import io.github.sunlaud.changegen.change.complex.ChangeWithFksDropRestore;
 import io.github.sunlaud.changegen.change.complex.ChangeWithPkDropRestore;
 import io.github.sunlaud.changegen.change.complex.CompositeChange;
@@ -34,6 +35,10 @@ public class ChangeSetGenerator {
         Column affectedColumn = change.getColumn();
         Key pk = keyExtractor.getPk(affectedColumn.getTableName());
         if (pk.getColumns().contain(affectedColumn)) {
+            if (changeToUse instanceof DataTypeChange) {
+                //add not null constraint to column, coz it is lost after datatype changed
+                changeToUse = ((DataTypeChange) changeToUse).withNotNull();
+            }
             changeToUse = new ChangeWithPkDropRestore(changeToUse, pk);
             Collection<ForeignKey> fks = keyExtractor.getFkReferncing(pk.getColumns());
             if (!fks.isEmpty()) {
