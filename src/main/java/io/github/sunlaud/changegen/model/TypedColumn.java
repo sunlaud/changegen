@@ -5,7 +5,7 @@ import lombok.EqualsAndHashCode;
 
 import java.sql.JDBCType;
 
-@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class TypedColumn extends Column {
     private final JDBCType dataType;
@@ -17,5 +17,9 @@ public class TypedColumn extends Column {
         this.dataType = dataType;
         this.size = size;
         this.nullable = nullable;
+    }
+
+    public Column withoutType() {
+        return new Column(getTableName(), getName());
     }
 }

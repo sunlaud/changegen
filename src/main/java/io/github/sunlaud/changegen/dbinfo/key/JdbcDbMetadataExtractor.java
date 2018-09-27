@@ -62,6 +62,20 @@ public class JdbcDbMetadataExtractor implements DbMetadataExtractor {
 
     @Override
     @SneakyThrows
+    public Collection<TypedColumn> findColumnsByName(@NonNull String columnNamePattern) {
+        try(Connection connection = dataSource.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            ResultSet columnsInfo = metaData.getColumns(null, null, null, columnNamePattern);
+            ResultSetHandlerFactory<ColumnDto> resultSetHandlerFactory = resultSetHandlerFactoryBuilder.newFactory(ColumnDto.class);
+            PojoResultSetIterator<ColumnDto> columnsIterator = new PojoResultSetIterator<>(columnsInfo, true, resultSetHandlerFactoryBuilder.getQuirks(), resultSetHandlerFactory);
+            return Lists.newArrayList(columnsIterator).stream()
+                    .map(dto -> new TypedColumn(dto.getTableName(), dto.getColumnName(), dto.getType(), dto.getColumnSize(), dto.isNullable()))
+                    .collect(Collectors.toList());
+        }
+    }
+
+    @Override
+    @SneakyThrows
     public TypedColumn getColumnInfo(@NonNull Column column) {
         try(Connection connection = dataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();

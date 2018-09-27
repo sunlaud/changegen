@@ -15,6 +15,9 @@ public interface DbMetadataExtractor {
     Optional<Key> getPk(String tableName);
 
     @SneakyThrows
+    Collection<TypedColumn> findColumnsByName(@NonNull String columnNamePattern);
+
+    @SneakyThrows
     TypedColumn getColumnInfo(@NonNull Column column);
 
     Collection<ForeignKey> getFkReferncing(Columns referencedColumns);
