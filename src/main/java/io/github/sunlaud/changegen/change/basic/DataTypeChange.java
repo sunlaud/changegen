@@ -25,6 +25,6 @@ public class DataTypeChange implements ColumnChange {
     }
 
     public AddNotNullConstraintChange withNotNull() {
-        return new AddNotNullConstraintChange(column, newDataType);
+        return new AddNotNullConstraintChange(column, newDataType, "used instead of modifyDataType coz latter removes not null");
     }
 }

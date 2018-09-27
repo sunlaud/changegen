@@ -4,8 +4,8 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.github.sunlaud.changegen.change.ColumnChange;
 import io.github.sunlaud.changegen.change.basic.DataTypeChange;
-import io.github.sunlaud.changegen.dbinfo.key.JdbcKeyExtractor;
-import io.github.sunlaud.changegen.dbinfo.key.KeyExtractor;
+import io.github.sunlaud.changegen.dbinfo.key.JdbcDbMetadataExtractor;
+import io.github.sunlaud.changegen.dbinfo.key.DbMetadataExtractor;
 import io.github.sunlaud.changegen.model.Column;
 
 import javax.sql.DataSource;
@@ -13,8 +13,8 @@ import javax.sql.DataSource;
 public class Main {
 
     public static void main(String[] args) {
-        KeyExtractor keyExtractor = new JdbcKeyExtractor(getDataSource());
-        ChangeSetGenerator changeSetGenerator = new ChangeSetGenerator(keyExtractor);
+        DbMetadataExtractor metadataExtractor = new JdbcDbMetadataExtractor(getDataSource());
+        ChangeSetGenerator changeSetGenerator = new ChangeSetGenerator(metadataExtractor);
 
         ColumnChange change = new DataTypeChange(new Column("EMPLOYEE", "FIRST_NAME"), "varchar(10)");
 

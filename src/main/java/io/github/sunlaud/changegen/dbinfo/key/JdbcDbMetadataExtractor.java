@@ -1,5 +1,6 @@
 package io.github.sunlaud.changegen.dbinfo.key;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 import io.github.sunlaud.changegen.model.Column;
@@ -7,6 +8,7 @@ import io.github.sunlaud.changegen.model.ColumnReference;
 import io.github.sunlaud.changegen.model.Columns;
 import io.github.sunlaud.changegen.model.ForeignKey;
 import io.github.sunlaud.changegen.model.Key;
+import io.github.sunlaud.changegen.model.TypedColumn;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -18,20 +20,24 @@ import org.sql2o.Sql2o;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.JDBCType;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.singletonList;
 
-public class JdbcKeyExtractor implements KeyExtractor {
+public class JdbcDbMetadataExtractor implements DbMetadataExtractor {
     private final DataSource dataSource;
     private final DefaultResultSetHandlerFactoryBuilder resultSetHandlerFactoryBuilder;
 
-    public JdbcKeyExtractor(DataSource dataSource) {
+    public JdbcDbMetadataExtractor(DataSource dataSource) {
         this.dataSource = dataSource;
         resultSetHandlerFactoryBuilder = new DefaultResultSetHandlerFactoryBuilder();
         resultSetHandlerFactoryBuilder.setQuirks(new Sql2o(this.dataSource).getQuirks());
@@ -41,7 +47,8 @@ public class JdbcKeyExtractor implements KeyExtractor {
 
     @SneakyThrows
     @Override
-    public Key getPk(@NonNull String tableName) {
+    public Optional<Key> getPk(@NonNull String tableName) {
+        //TODO check if table exists
         try(Connection connection = dataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
             ResultSet primaryKeysInfo = metaData.getPrimaryKeys(null, null, tableName);
@@ -49,8 +56,22 @@ public class JdbcKeyExtractor implements KeyExtractor {
             PojoResultSetIterator<PkDto> keysIterator = new PojoResultSetIterator<>(primaryKeysInfo, true, resultSetHandlerFactoryBuilder.getQuirks(), resultSetHandlerFactory);
             return Lists.newArrayList(keysIterator).stream()
                     .map(dto -> new Key(dto.getPkName(), new Column(dto.getTableName(), dto.getColumnName())))
-                    .reduce(Key::compose)
-                    .orElseThrow(() -> new IllegalStateException("Table " + tableName + " has no primary key (table exists? name in wrong case? no PK?)"));
+                    .reduce(Key::compose);
+        }
+    }
+
+    @Override
+    @SneakyThrows
+    public TypedColumn getColumnInfo(@NonNull Column column) {
+        try(Connection connection = dataSource.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            ResultSet columnsInfo = metaData.getColumns(null, null, column.getTableName(), column.getName());
+            ResultSetHandlerFactory<ColumnDto> resultSetHandlerFactory = resultSetHandlerFactoryBuilder.newFactory(ColumnDto.class);
+            PojoResultSetIterator<ColumnDto> columnsIterator = new PojoResultSetIterator<>(columnsInfo, true, resultSetHandlerFactoryBuilder.getQuirks(), resultSetHandlerFactory);
+            ArrayList<ColumnDto> columnDtos = Lists.newArrayList(columnsIterator);
+            checkState(columnDtos.size() == 1, "Expected exactly 1 column with name %s in table %s, but got %s: %s", column.getName(), column.getTableName(), columnDtos.size(), columnDtos);
+            ColumnDto dto = Iterables.getOnlyElement(columnDtos);
+            return new TypedColumn(dto.getTableName(), dto.getColumnName(), dto.getType(), dto.getColumnSize(), dto.isNullable());
         }
     }
 
@@ -81,6 +102,21 @@ public class JdbcKeyExtractor implements KeyExtractor {
 
     private ColumnReference asColumnReference(FkDto dto) {
         return new ColumnReference(new Column(dto.getFktableName(), dto.getFkcolumnName()), new Column(dto.getPktableName(), dto.getPkcolumnName()));
+    }
+
+    /** Field names depend on columns from {@link DatabaseMetaData#getColumns} */
+    @Data
+    private static class ColumnDto {
+        private final String tableName;
+        private final String columnName;
+        private final String typeName;
+        private final int dataType;
+        private final int columnSize;
+        private final boolean nullable;
+
+        public JDBCType getType() {
+            return JDBCType.valueOf(dataType);
+        }
     }
 
     /** Field names depend on columns from {@link DatabaseMetaData#getPrimaryKeys} */

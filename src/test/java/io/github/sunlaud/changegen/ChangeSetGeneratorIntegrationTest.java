@@ -6,8 +6,8 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.github.sunlaud.changegen.change.ColumnChange;
 import io.github.sunlaud.changegen.change.basic.DataTypeChange;
-import io.github.sunlaud.changegen.dbinfo.key.JdbcKeyExtractor;
-import io.github.sunlaud.changegen.dbinfo.key.KeyExtractor;
+import io.github.sunlaud.changegen.dbinfo.key.JdbcDbMetadataExtractor;
+import io.github.sunlaud.changegen.dbinfo.key.DbMetadataExtractor;
 import io.github.sunlaud.changegen.model.Column;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -22,20 +22,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class ChangeSetGeneratorIntegrationTest {
     private static final String CHANGESETS_DIR = "test-data/changeset-generator-it/expected-changesets";
-    private static final KeyExtractor KEY_EXTRACTOR = new JdbcKeyExtractor(getDataSource());
+    private static final DbMetadataExtractor KEY_EXTRACTOR = new JdbcDbMetadataExtractor(getDataSource());
     private final ChangeSetGenerator sut = new ChangeSetGenerator(KEY_EXTRACTOR);
 
-    private static Stream<Arguments> generatesChangesetsForDatatypeChange() {
+    private static Stream<Arguments> changes() {
         return Stream.of(
                 Arguments.of("NOT_REFERENCED", "ID", "bigint", "not_referenced_id__datatype_change.xml"),
-                Arguments.of("EMPLOYEE", "FIRST_NAME", "bigint", "employee_id__datatype_change.xml")
-                //Arguments.of("DEPARTMENT", "ID", "bigint", "department_id__datatype_change.xml"),
+                Arguments.of("EMPLOYEE", "FIRST_NAME", "bigint", "employee_id__datatype_change.xml"),
+                Arguments.of("DEPARTMENT", "ID", "bigint", "department_id__datatype_change.xml")
                 //Arguments.of("INDEXED_CONSTRAINED", "IDX1", "bigint", "indexed_constrained_idx__datatype_change.xml"),
                 //Arguments.of("INDEXED_CONSTRAINED", "UNI2", "bigint", "indexed_constrained_uni__datatype_change.xml")
         );//.flatMap(addLowercaseParams()); //duplicate tests with lowercase
     }
 
-    @MethodSource
+    @MethodSource("changes")
     @ParameterizedTest
     void generatesChangesetsForDatatypeChange(String tableName, String columnName, String newDataType, final String fileWithExpectedContent) throws Exception {
         //GIVEN
@@ -46,8 +46,29 @@ class ChangeSetGeneratorIntegrationTest {
         String generated = sut.generateChangeset(change);
 
         //THEN
-        assertThat(generated).isEqualTo(loadFile(fileWithExpectedContent));
+        assertThat(stripComments(generated)).isEqualTo(loadFile(fileWithExpectedContent));
+    }
 
+
+    @MethodSource("changes")
+    @ParameterizedTest
+    void addsCommentsToAddNotNullChangesets(String tableName, String columnName, String newDataType, final String fileWithExpectedContent) throws Exception {
+        //GIVEN
+        Column column = new Column(tableName, columnName);
+        ColumnChange change = new DataTypeChange(column, newDataType);
+
+        //WHEN
+        String generated = sut.generateChangeset(change);
+
+        //THEN
+        String[] generatedLines = generated.split("\\n");
+        assertThat(generatedLines)
+                .filteredOn(line -> line.startsWith("<addNotNullConstraint"))
+                .allMatch(line -> line.endsWith(" <!-- used instead of modifyDataType coz latter removes not null -->"));
+    }
+
+    private String stripComments(String generated) {
+        return generated.replaceAll(">\\s*<!--[^>]+>", ">");
     }
 
     private String loadFile(String fileWithExpectedContent) throws IOException {
