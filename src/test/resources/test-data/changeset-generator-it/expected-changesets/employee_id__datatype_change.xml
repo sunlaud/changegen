@@ -1,0 +1,8 @@
+<dropForeignKeyConstraint baseTableName="SALARY" constraintName="FK_SALARY_EMPLOYEE"/>
+<dropPrimaryKey tableName="EMPLOYEE" constraintName="PK_EMPLOYEE"/>
+<addNotNullConstraint tableName="EMPLOYEE" columnName="FIRST_NAME" columnDataType="bigint"/>
+<addPrimaryKey tableName="EMPLOYEE" columnNames="LAST_NAME,FIRST_NAME" constraintName="PK_EMPLOYEE"/>
+<dropPrimaryKey tableName="SALARY" constraintName="PK_SALARY"/>
+<addNotNullConstraint tableName="SALARY" columnName="EMP_FIRST_NAME" columnDataType="bigint"/>
+<addPrimaryKey tableName="SALARY" columnNames="EMP_FIRST_NAME,COUNT_NUM,EMP_LAST_NAME" constraintName="PK_SALARY"/>
+<addForeignKeyConstraint baseTableName="SALARY" baseColumnNames="EMP_FIRST_NAME,EMP_LAST_NAME" referencedTableName="EMPLOYEE" referencedColumnNames="LAST_NAME,FIRST_NAME" constraintName="FK_SALARY_EMPLOYEE"/>

@@ -1,0 +1,9 @@
+<dropForeignKeyConstraint baseTableName="EMPLOYEE" constraintName="FK_EMPLOYEE_DEPARTMENT"/>
+<dropForeignKeyConstraint baseTableName="EMPLOYEE" constraintName="FK_EMPLOYEE_TEMP_DEPARTMENT"/>
+<dropPrimaryKey tableName="DEPARTMENT" constraintName="PK_DEPARTMENT"/>
+<addNotNullConstraint tableName="DEPARTMENT" columnName="ID" columnDataType="bigint"/>
+<addPrimaryKey tableName="DEPARTMENT" columnNames="ID" constraintName="PK_DEPARTMENT"/>
+<addNotNullConstraint tableName="EMPLOYEE" columnName="DEPARTMENT_ID" columnDataType="bigint"/>
+<modifyDataType tableName="EMPLOYEE" columnName="TEMP_DEPARTMENT_ID" newDataType="bigint"/>
+<addForeignKeyConstraint baseTableName="EMPLOYEE" baseColumnNames="DEPARTMENT_ID" referencedTableName="DEPARTMENT" referencedColumnNames="ID" constraintName="FK_EMPLOYEE_DEPARTMENT"/>
+<addForeignKeyConstraint baseTableName="EMPLOYEE" baseColumnNames="TEMP_DEPARTMENT_ID" referencedTableName="DEPARTMENT" referencedColumnNames="ID" constraintName="FK_EMPLOYEE_TEMP_DEPARTMENT"/>

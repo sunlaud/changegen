@@ -1,0 +1,4 @@
+<dropUniqueConstraint tableName="INDEXED_CONSTRAINED" constraintName="UK_INDEXED_CONTRAINED"/>
+<addNotNullConstraint tableName="INDEXED_CONSTRAINED" columnName="UNI2" columnDataType="bigint"/>
+<addUniqueConstraint tableName="INDEXED_CONSTRAINED" columnNames="UNI1,UNI2" constraintName="UK_INDEXED_CONSTRAINED"/>
+

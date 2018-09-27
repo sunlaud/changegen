@@ -1,0 +1,3 @@
+<dropPrimaryKey tableName="NOT_REFERENCED" constraintName="PK_NOT_REFERENCED"/>
+<addNotNullConstraint tableName="NOT_REFERENCED" columnName="ID" columnDataType="bigint"/>
+<addPrimaryKey tableName="NOT_REFERENCED" columnNames="ID" constraintName="PK_NOT_REFERENCED"/>

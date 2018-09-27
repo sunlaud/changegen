@@ -1,0 +1,7 @@
+<dropIndex tableName="INDEXED_CONSTRAINED" indexName="IDX_INDEXED_CONTRAINED"/>
+<addNotNullConstraint tableName="INDEXED_CONSTRAINED" columnName="IDX1" columnDataType="bigint"/>
+<createIndex tableName="INDEXED_CONSTRAINED" indexName="IDX_INDEXED_CONSTRAINED">
+    <column name="idx1" type="int"/>
+    <column name="idx2" type="varchar(2)"/>
+</createIndex>
+

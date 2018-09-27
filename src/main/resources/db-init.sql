@@ -24,15 +24,3 @@ create table salary(
   constraint pk_salary primary key ( id ),
   constraint fk_salary_employee foreign key ( emp_first_name, emp_last_name ) references employee ( first_name, last_name )
 );
-
-
-
-insert into department values( 10, 'ACCOUNTING', 'NEW YORK' );
-insert into department values( 20, 'RESEARCH', 'DALLAS' );
-insert into department values( 30, 'SALES', 'CHICAGO' );
-insert into department values( 40, 'OPERATIONS', 'BOSTON' );
-
-insert into employee values('John','KING','PRESIDENT','1981-11-17',10);
-insert into employee values('Andy','BLAKE','MANAGER','1981-05-01',20);
-insert into employee values('Kevin','CLARK','MANAGER','1981-09-09',30);
-insert into employee values('Levi','JONES','MANAGER','1981-04-02',40);
