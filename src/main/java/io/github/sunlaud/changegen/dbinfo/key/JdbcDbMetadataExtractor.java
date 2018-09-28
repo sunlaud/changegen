@@ -7,6 +7,7 @@ import io.github.sunlaud.changegen.model.Column;
 import io.github.sunlaud.changegen.model.ColumnReference;
 import io.github.sunlaud.changegen.model.Columns;
 import io.github.sunlaud.changegen.model.ForeignKey;
+import io.github.sunlaud.changegen.model.Index;
 import io.github.sunlaud.changegen.model.Key;
 import io.github.sunlaud.changegen.model.TypedColumn;
 import lombok.Data;
@@ -24,6 +25,7 @@ import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -60,9 +62,37 @@ public class JdbcDbMetadataExtractor implements DbMetadataExtractor {
         }
     }
 
+    @SneakyThrows
+    @Override
+    public Collection<Index> getIndexesContaining(@NonNull Column column) {
+        if (column.getTableName().equalsIgnoreCase("fp_redraw")) {
+            System.out.println("----------get index for " + column);
+        }
+        //TODO check if table exists
+        try(Connection connection = dataSource.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            ResultSet primaryKeysInfo = metaData.getIndexInfo(null, null, column.getTableName(), false, false);
+            ResultSetHandlerFactory<IndexDto> resultSetHandlerFactory = resultSetHandlerFactoryBuilder.newFactory(IndexDto.class);
+            PojoResultSetIterator<IndexDto> indexIterator = new PojoResultSetIterator<>(primaryKeysInfo, true, resultSetHandlerFactoryBuilder.getQuirks(), resultSetHandlerFactory);
+
+            ArrayList<IndexDto> indexDtos1 = Lists.newArrayList(indexIterator);
+            List<IndexDto> indexDtos = indexDtos1.stream()
+                    .filter(dto -> dto.getIndexName() != null)
+                    .filter(dto -> !dto.isStatistic())
+                    .collect(Collectors.toList());
+            Map<String, Collection<IndexDto>> indeciesByName = Multimaps.index(indexDtos, IndexDto::getIndexName).asMap();
+            return indeciesByName.entrySet().stream()
+                    .map(Entry::getValue)
+                    .map(this::buildIndex)
+                    .filter(index -> index.getColumns().contain(column))
+                    .collect(Collectors.toList());
+        }
+    }
+
     @Override
     @SneakyThrows
     public TypedColumn getColumnInfo(@NonNull Column column) {
+        //TODO check if table exists
         try(Connection connection = dataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
             ResultSet columnsInfo = metaData.getColumns(null, null, column.getTableName(), column.getName());
@@ -78,6 +108,7 @@ public class JdbcDbMetadataExtractor implements DbMetadataExtractor {
     @SneakyThrows
     @Override
     public Collection<ForeignKey> getFkReferncing(@NonNull Columns referencedColumns) {
+        //TODO check if table exists
         try(Connection connection = dataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
             ResultSet exportedKeysInfo = metaData.getExportedKeys(null, null, referencedColumns.getTableName());
@@ -97,6 +128,14 @@ public class JdbcDbMetadataExtractor implements DbMetadataExtractor {
         return fkDtos.stream()
                 .map(dto -> new ForeignKey(new Key(dto.getFkName(), new Column(dto.getFktableName(), dto.getFkcolumnName())), singletonList(asColumnReference(dto))))
                 .reduce(ForeignKey::compose)
+                .get();
+    }
+
+    private Index buildIndex(Collection<IndexDto> indexDtos) {
+        checkArgument(!indexDtos.isEmpty());
+        return indexDtos.stream()
+                .map(dto -> new io.github.sunlaud.changegen.model.Index(dto.getIndexName(), new Column(dto.getTableName(), dto.getColumnName()), !dto.isNonUnique()))
+                .reduce(Index::compose)
                 .get();
     }
 
@@ -135,5 +174,23 @@ public class JdbcDbMetadataExtractor implements DbMetadataExtractor {
         private final String fktableName;
         private final String fkcolumnName;
         private final String fkName;
+    }
+
+    /** Field names depend on columns from {@link DatabaseMetaData#getIndexInfo} */
+    @Data
+    private static class IndexDto {
+        private final String tableName;
+        private final String columnName;
+        private final boolean nonUnique;
+        private final String indexName;
+        private final short type;
+
+        public boolean isClustered() {
+            return type == DatabaseMetaData.tableIndexClustered;
+        }
+
+        public boolean isStatistic() {
+            return type == DatabaseMetaData.tableIndexStatistic;
+        }
     }
 }

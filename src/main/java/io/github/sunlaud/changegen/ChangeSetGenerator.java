@@ -4,11 +4,13 @@ import io.github.sunlaud.changegen.change.Change;
 import io.github.sunlaud.changegen.change.ColumnChange;
 import io.github.sunlaud.changegen.change.basic.DataTypeChange;
 import io.github.sunlaud.changegen.change.complex.ChangeWithFksDropRestore;
+import io.github.sunlaud.changegen.change.complex.ChangeWithIndicesDropRestore;
 import io.github.sunlaud.changegen.change.complex.ChangeWithPkDropRestore;
 import io.github.sunlaud.changegen.change.complex.CompositeChange;
 import io.github.sunlaud.changegen.dbinfo.key.DbMetadataExtractor;
 import io.github.sunlaud.changegen.model.Column;
 import io.github.sunlaud.changegen.model.ForeignKey;
+import io.github.sunlaud.changegen.model.Index;
 import io.github.sunlaud.changegen.model.Key;
 import io.github.sunlaud.changegen.model.TypedColumn;
 import lombok.NonNull;
@@ -36,7 +38,7 @@ public class ChangeSetGenerator {
         Column affectedColumn = change.getColumn();
         Optional<Key> maybePk = metadataExtractor.getPk(affectedColumn.getTableName());
         if (!maybePk.isPresent()) {
-            return changeToUse;
+            return getIndicesChange(changeToUse, affectedColumn, maybePk);
         }
         Key pk = maybePk.get();
         if (pk.getColumns().contain(affectedColumn)) {
@@ -45,6 +47,8 @@ public class ChangeSetGenerator {
                 changeToUse = ((DataTypeChange) changeToUse).withNotNull();
             }
             changeToUse = new ChangeWithPkDropRestore(changeToUse, pk);
+            changeToUse = getIndicesChange(changeToUse, affectedColumn, maybePk);
+
             Collection<ForeignKey> fks = metadataExtractor.getFkReferncing(pk.getColumns());
             if (!fks.isEmpty()) {
                 CompositeChange dependentFksChange = fks.stream()
@@ -54,6 +58,18 @@ public class ChangeSetGenerator {
                         .collect(collectingAndThen(toList(), CompositeChange::of));
                 changeToUse = new ChangeWithFksDropRestore(CompositeChange.of(asList(changeToUse, dependentFksChange)), fks);
             }
+        } else {
+            changeToUse = getIndicesChange(changeToUse, affectedColumn, maybePk);
+        }
+        return changeToUse;
+    }
+
+    private Change getIndicesChange(Change changeToUse, Column affectedColumn, Optional<Key> maybePk) {
+        Collection<Index> indices = metadataExtractor.getIndexesContaining(affectedColumn).stream()
+                .filter(index -> !maybePk.isPresent() || !index.getName().equalsIgnoreCase(maybePk.get().getName()))
+                .collect(toList());
+        if (!indices.isEmpty()) {
+            changeToUse = new ChangeWithIndicesDropRestore(changeToUse, indices);
         }
         return changeToUse;
     }

@@ -13,7 +13,7 @@ public class AddNotNullConstraintChange implements ColumnChange {
     private final Column column;
     @NonNull
     private final String dataType; //required for MSSQL, may be optional for other DBMS
-    private final String comment;
+    private final String comment; //TODO should be extracted and generalized
 
     @Override
     public String generateXml() {
