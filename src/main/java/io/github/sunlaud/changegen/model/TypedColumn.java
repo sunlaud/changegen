@@ -10,12 +10,12 @@ import java.sql.JDBCType;
 public class TypedColumn extends Column {
     private final JDBCType dataType;
     private final int size;
-    private final boolean nullable;
+    private final boolean notNull;
 
-    public TypedColumn(String tableName, String name, JDBCType dataType, int size, boolean nullable) {
+    public TypedColumn(String tableName, String name, JDBCType dataType, int size, boolean notNull) {
         super(tableName, name);
         this.dataType = dataType;
         this.size = size;
-        this.nullable = nullable;
+        this.notNull = notNull;
     }
 }

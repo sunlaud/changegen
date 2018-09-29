@@ -60,7 +60,7 @@ public class ChangeSetGenerator {
 
     private ColumnChange applyChange(ColumnChange change, Column column) {
         TypedColumn typedColumn = metadataExtractor.getColumnInfo(column);
-        ColumnChange changeToUse = (change instanceof DataTypeChange && !typedColumn.isNullable())
+        ColumnChange changeToUse = (change instanceof DataTypeChange && typedColumn.isNotNull())
                 ? ((DataTypeChange) change).withNotNull() //add not null constraint to column, coz it is lost after datatype changed
                 : change;
         return  changeToUse.applyTo(column);

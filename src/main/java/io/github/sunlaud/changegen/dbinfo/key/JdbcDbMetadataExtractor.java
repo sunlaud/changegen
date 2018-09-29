@@ -9,7 +9,9 @@ import io.github.sunlaud.changegen.model.Columns;
 import io.github.sunlaud.changegen.model.ForeignKey;
 import io.github.sunlaud.changegen.model.Key;
 import io.github.sunlaud.changegen.model.TypedColumn;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.sql2o.DefaultResultSetHandlerFactoryBuilder;
@@ -21,12 +23,17 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.JDBCType;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.ArrayList;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -37,6 +44,11 @@ public class JdbcDbMetadataExtractor implements DbMetadataExtractor {
     private final DataSource dataSource;
     private final DefaultResultSetHandlerFactoryBuilder resultSetHandlerFactoryBuilder;
 
+    @FunctionalInterface
+    private interface MetadaResultsetProvider {
+        ResultSet provideFrom(DatabaseMetaData metaData) throws SQLException;
+    }
+
     public JdbcDbMetadataExtractor(DataSource dataSource) {
         this.dataSource = dataSource;
         resultSetHandlerFactoryBuilder = new DefaultResultSetHandlerFactoryBuilder();
@@ -45,50 +57,61 @@ public class JdbcDbMetadataExtractor implements DbMetadataExtractor {
         resultSetHandlerFactoryBuilder.setCaseSensitive(false);
     }
 
-    @SneakyThrows
     @Override
     public Optional<Key> getPk(@NonNull String tableName) {
-        //TODO check if table exists
-        try(Connection connection = dataSource.getConnection()) {
-            DatabaseMetaData metaData = connection.getMetaData();
-            ResultSet primaryKeysInfo = metaData.getPrimaryKeys(null, null, tableName);
-            ResultSetHandlerFactory<PkDto> resultSetHandlerFactory = resultSetHandlerFactoryBuilder.newFactory(PkDto.class);
-            PojoResultSetIterator<PkDto> keysIterator = new PojoResultSetIterator<>(primaryKeysInfo, true, resultSetHandlerFactoryBuilder.getQuirks(), resultSetHandlerFactory);
-            return Lists.newArrayList(keysIterator).stream()
-                    .map(dto -> new Key(dto.getPkName(), new Column(dto.getTableName(), dto.getColumnName())))
-                    .reduce(Key::compose);
-        }
+        getTableColumnNames(tableName); //just check if table exists, exception if not
+        List<PkDto> pkDtos = queryForMeta(PkDto.class, metaData -> metaData.getPrimaryKeys(null, null, tableName));
+        return pkDtos.stream()
+                .map(dto -> new Key(dto.getPkName(), new Column(dto.getTableName(), dto.getColumnName())))
+                .reduce(Key::compose);
     }
 
     @Override
-    @SneakyThrows
     public TypedColumn getColumnInfo(@NonNull Column column) {
-        try(Connection connection = dataSource.getConnection()) {
-            DatabaseMetaData metaData = connection.getMetaData();
-            ResultSet columnsInfo = metaData.getColumns(null, null, column.getTableName(), column.getName());
-            ResultSetHandlerFactory<ColumnDto> resultSetHandlerFactory = resultSetHandlerFactoryBuilder.newFactory(ColumnDto.class);
-            PojoResultSetIterator<ColumnDto> columnsIterator = new PojoResultSetIterator<>(columnsInfo, true, resultSetHandlerFactoryBuilder.getQuirks(), resultSetHandlerFactory);
-            ArrayList<ColumnDto> columnDtos = Lists.newArrayList(columnsIterator);
-            checkState(columnDtos.size() == 1, "Expected exactly 1 column with name %s in table %s, but got %s: %s", column.getName(), column.getTableName(), columnDtos.size(), columnDtos);
-            ColumnDto dto = Iterables.getOnlyElement(columnDtos);
-            return new TypedColumn(dto.getTableName(), dto.getColumnName(), dto.getType(), dto.getColumnSize(), dto.isNullable());
-        }
-    }
+        getTableColumnNames(column.getTableName()).contains(column.getName())
+        List<ColumnDto> columnDtos = queryForMeta(ColumnDto.class, metaData -> metaData.getColumns(null, null, column.getTableName(), column.getName()));
+        checkState(columnDtos.size() == 1, "Expected exactly 1 column with name %s in table %s, but got %s: %s", column.getName(), column.getTableName(), columnDtos.size(), columnDtos);
+        ColumnDto dto = Iterables.getOnlyElement(columnDtos);
+        return new TypedColumn(dto.getTableName(), dto.getColumnName(), dto.getType(), dto.getColumnSize(), dto.isNotNull());
+     }
 
-    @SneakyThrows
     @Override
     public Collection<ForeignKey> getFkReferncing(@NonNull Columns referencedColumns) {
+        List<FkDto> keys = queryForMeta(FkDto.class, metadata -> metadata.getExportedKeys(null, null, referencedColumns.getTableName()));
+        Map<String, Collection<FkDto>> keysByTable = Multimaps.index(keys, FkDto::getFkName).asMap();
+        return keysByTable.entrySet().stream()
+                .map(Entry::getValue)
+                .map(this::buildFk)
+                .filter(fk -> fk.getReferencedColumns().contain(referencedColumns))
+                .collect(Collectors.toList());
+    }
+
+    private void columnExists(Column column) {
+
+    }
+
+    @SneakyThrows
+    private Set<String> getTableColumnNames(String tableName) {
+        try(Connection connection = dataSource.getConnection()) {
+            //use prepared statement to query columns metadata for performance (sic!) (see https://www.progress.com/tutorials/jdbc/designing-performance#database-metadata-methods)
+            PreparedStatement statement = connection.prepareStatement("SELECT * FROM " + tableName + " WHERE 1 = 0"); // query is never executed on the server - only prepared
+            ResultSetMetaData metaData = statement.getMetaData();
+            Set<String> columnNames = new HashSet<>();
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                columnNames.add(metaData.getColumnName(i));
+            }
+            return columnNames;
+        }
+    }
+
+    @SneakyThrows
+    private <T> List<T> queryForMeta(Class<T> resultClass, MetadaResultsetProvider resultsetProvider) {
         try(Connection connection = dataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
-            ResultSet exportedKeysInfo = metaData.getExportedKeys(null, null, referencedColumns.getTableName());
-            ResultSetHandlerFactory<FkDto> resultSetHandlerFactory = resultSetHandlerFactoryBuilder.newFactory(FkDto.class);
-            PojoResultSetIterator<FkDto> keysIterator = new PojoResultSetIterator<>(exportedKeysInfo, true, resultSetHandlerFactoryBuilder.getQuirks(), resultSetHandlerFactory);
-            Map<String, Collection<FkDto>> keysByTable = Multimaps.index(keysIterator, FkDto::getFkName).asMap();
-            return keysByTable.entrySet().stream()
-                    .map(Entry::getValue)
-                    .map(this::buildFk)
-                    .filter(fk -> fk.getReferencedColumns().contain(referencedColumns))
-                    .collect(Collectors.toList());
+            ResultSet metadataResultSet = resultsetProvider.provideFrom(metaData);
+            ResultSetHandlerFactory<T> resultSetHandlerFactory = resultSetHandlerFactoryBuilder.newFactory(resultClass);
+            PojoResultSetIterator<T> resultSetIterator = new PojoResultSetIterator<>(metadataResultSet, true, resultSetHandlerFactoryBuilder.getQuirks(), resultSetHandlerFactory);
+            return Lists.newArrayList(resultSetIterator);
         }
     }
 
@@ -112,10 +135,15 @@ public class JdbcDbMetadataExtractor implements DbMetadataExtractor {
         private final String typeName;
         private final int dataType;
         private final int columnSize;
-        private final boolean nullable;
+        @Getter(AccessLevel.NONE)
+        private final int nullable;
 
         public JDBCType getType() {
             return JDBCType.valueOf(dataType);
+        }
+
+        public boolean isNotNull() {
+            return nullable == DatabaseMetaData.columnNoNulls;
         }
     }
 
