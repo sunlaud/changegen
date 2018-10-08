@@ -1,19 +1,16 @@
 package io.github.sunlaud.changegen.change.basic;
 
-import io.github.sunlaud.changegen.change.ColumnChange;
+import com.sun.istack.internal.NotNull;
 import io.github.sunlaud.changegen.model.Column;
-import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
-public class AddNotNullConstraintChange implements ColumnChange {
-    @NonNull
-    @Getter
-    private final Column column;
-    @NonNull
-    private final String dataType; //required for MSSQL, may be optional for other DBMS
+public class AddNotNullConstraintChange extends DataTypeChange {
     private final String comment;
+
+    public AddNotNullConstraintChange(@NonNull Column column, @NotNull String newDataType, String comment) {
+        super(column, newDataType);
+        this.comment = comment;
+    }
 
     @Override
     public String generateXml() {
@@ -25,7 +22,7 @@ public class AddNotNullConstraintChange implements ColumnChange {
     }
 
     @Override
-    public ColumnChange applyTo(Column anotherColumn) {
+    public DataTypeChange applyTo(Column anotherColumn) {
         return new AddNotNullConstraintChange(anotherColumn, dataType, comment);
     }
 }

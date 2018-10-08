@@ -32,24 +32,21 @@ public class ChangeSetGenerator {
     }
 
     private Change buildDependencyAwareChange(@NonNull ColumnChange change) {
-        Change changeToUse = change;
         Column affectedColumn = change.getColumn();
         Optional<Key> maybePk = metadataExtractor.getPk(affectedColumn.getTableName());
-        if (!maybePk.isPresent()) {
-            return changeToUse;
+        if (!maybePk.isPresent()) {  //TODO assume that no FK may be present if no PK exists, but FK may be present if unique index + not null exists
+            return change;
         }
+        Change changeToUse = change;
         Key pk = maybePk.get();
         if (pk.getColumns().contain(affectedColumn)) {
-            if (changeToUse instanceof DataTypeChange) {
-                //add not null constraint to column, coz it is lost after datatype changed
-                changeToUse = ((DataTypeChange) changeToUse).withNotNull();
-            }
+            changeToUse = applyChangeWithNotNullIfRequired(change, affectedColumn);
             changeToUse = new ChangeWithPkDropRestore(changeToUse, pk);
             Collection<ForeignKey> fks = metadataExtractor.getFkReferncing(pk.getColumns());
             if (!fks.isEmpty()) {
                 CompositeChange dependentFksChange = fks.stream()
                         .map(fk -> fk.getColumnReferencing(affectedColumn))
-                        .map(column -> applyChange(change, column))
+                        .map(column -> applyChangeWithNotNullIfRequired(change, column))
                         .map(this::buildDependencyAwareChange) //search for PK/FK referencing this FK
                         .collect(collectingAndThen(toList(), CompositeChange::of));
                 changeToUse = new ChangeWithFksDropRestore(CompositeChange.of(asList(changeToUse, dependentFksChange)), fks);
@@ -58,7 +55,33 @@ public class ChangeSetGenerator {
         return changeToUse;
     }
 
-    private ColumnChange applyChange(ColumnChange change, Column column) {
+
+    private Change buildDependencyAwareChange1(@NonNull ColumnChange change) {
+        Column affectedColumn = change.getColumn();
+        Optional<Key> maybePk = metadataExtractor.getPk(affectedColumn.getTableName());
+        return maybePk
+                .filter(pk -> pk.getColumns().contain(affectedColumn))
+                .map(pk1 -> buldPkAwareChange(pk1, affectedColumn, change))
+                .orElse(change); //TODO assumes that no FK may be present if no PK exists, but FK may be present if unique index + not null exists
+    }
+
+    private  Change buldPkAwareChange(Key pk, Column affectedColumn, ColumnChange change) {
+        Change changeToUse = applyChangeWithNotNullIfRequired(change, affectedColumn);
+        changeToUse = new ChangeWithPkDropRestore(changeToUse, pk);
+        Collection<ForeignKey> fks = metadataExtractor.getFkReferncing(pk.getColumns());
+        if (!fks.isEmpty()) {
+            CompositeChange dependentFksChange = fks.stream()
+                    .map(fk -> fk.getColumnReferencing(affectedColumn))
+                    .map(column -> applyChangeWithNotNullIfRequired(change, column))
+                    .map(this::buildDependencyAwareChange) //search for PK/FK referencing this FK
+                    .collect(collectingAndThen(toList(), CompositeChange::of));
+            changeToUse = new ChangeWithFksDropRestore(CompositeChange.of(asList(changeToUse, dependentFksChange)), fks);
+        }
+        return changeToUse;
+    }
+
+
+    private ColumnChange applyChangeWithNotNullIfRequired(ColumnChange change, Column column) {
         TypedColumn typedColumn = metadataExtractor.getColumnInfo(column);
         ColumnChange changeToUse = (change instanceof DataTypeChange && !typedColumn.isNullable())
                 ? ((DataTypeChange) change).withNotNull() //add not null constraint to column, coz it is lost after datatype changed

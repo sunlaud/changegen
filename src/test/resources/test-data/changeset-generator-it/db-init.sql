@@ -42,3 +42,18 @@ create table indexed_constrained(
     constraint uk_indexed_constrained unique (uni1, uni2),
 );
 create index idx_indexed_constrained on indexed_constrained (idx1, idx2);
+
+create table phone(
+  id int,
+  constraint pk_phone primary key ( id )
+);
+
+create table department_phone(
+  dep_id int,
+  phone_id int,
+  constraint pk_department_phone primary key ( dep_id, phone_id ),
+  constraint fk_department_phone_department foreign key ( dep_id ) references department ( id ),
+  constraint fk_department_phone_phone foreign key ( phone_id ) references phone ( id )
+);
+
+ALTER TABLE department_phone DROP PRIMARY KEY;

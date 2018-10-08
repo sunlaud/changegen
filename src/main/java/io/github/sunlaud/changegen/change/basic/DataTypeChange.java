@@ -11,20 +11,20 @@ import lombok.RequiredArgsConstructor;
 public class DataTypeChange implements ColumnChange {
     @Getter
     @NonNull
-    private final Column column;
+    protected final Column column;
     @NonNull
-    private final String newDataType;
+    protected final String dataType;
 
     @Override
     public String generateXml() {
-        return String.format("<modifyDataType tableName=\"%s\" columnName=\"%s\" newDataType=\"%s\"/>", column.getTableName(), column.getName(), newDataType);
+        return String.format("<modifyDataType tableName=\"%s\" columnName=\"%s\" newDataType=\"%s\"/>", column.getTableName(), column.getName(), dataType);
     }
 
     public DataTypeChange applyTo(Column anotherColumn) {
-        return new DataTypeChange(anotherColumn, newDataType);
+        return new DataTypeChange(anotherColumn, dataType);
     }
 
     public AddNotNullConstraintChange withNotNull() {
-        return new AddNotNullConstraintChange(column, newDataType, "used instead of modifyDataType coz latter removes not null");
+        return new AddNotNullConstraintChange(column, dataType, "used instead of modifyDataType coz latter removes not null");
     }
 }
